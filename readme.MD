@@ -211,9 +211,12 @@ was: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-de
 - 아래 2개 변수를 설정
      - CD_REPOSITORY
         ```
-        gh variable set CD_REPOSITORY --repo ucoccto/tf-k8s-ci --body "ucoccto/devops_tf_k8s_cd"
+        gh variable set CD_REPOSITORY --repo olchangiagi/devops_tf_k8s_ci --body "olchangiagi/devops_tf_k8s_cd"
         ```
     - CD_REPOSITORY_TOKEN
         ```
-        gh auth token | gh secret set CD_REPOSITORY_TOKEN --repo ucoccto/devops_tf_k8s_ci
+        gh auth token | gh secret set CD_REPOSITORY_TOKEN --repo olchangiagi/devops_tf_k8s_ci
         ```
+
+# ArgoCD 대시보드
+- ./scripts/open-argocd.bat
