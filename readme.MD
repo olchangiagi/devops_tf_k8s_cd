@@ -174,3 +174,35 @@ argocd-redis-79db4b8976-qkzfn                      1/1     Running   0          
 argocd-repo-server-5fcf7766cd-zmc6m                1/1     Running   0              4m36s
 argocd-server-978b68fb7-ptbjj                      1/1     Running   0              4m36s
 ```
+
+  # Argo CD와 Github 저장소 연결 상태 확인
+  kubectl get applications -n argocd
+  ---
+  NAME       SYNC STATUS   HEALTH STATUS
+    de-ai-08   OutOfSync     Progressing
+
+# 현재 상황 체크
+```
+# pod 상태 확인
+  kubectl get pods -n de-ai-08
+  ---
+  NAME                   READY   STATUS             RESTARTS   AGE
+    was-5869bb9fcd-p5k6q   1/1     Running            0          75m
+    was-5869bb9fcd-xpsll   1/1     Running            0          74m
+    was-c6dc9867c-x89cf    0/1     ImagePullBackOff   0          5m16s
+    web-7f987ffbbc-bchrp   0/1     ImagePullBackOff   0          5m16s
+    web-8f6b5b458-9qvtr    1/1     Running            0          74m
+    web-8f6b5b458-fczwf    1/1     Running            0          75m
+
+# Ingress, ALB 주소 체크
+  kubectl get ingress -n de-ai-08
+  ---
+  NAME         CLASS   HOSTS   ADDRESS                                                                PORTS   AGE
+public-alb   alb     *       k8s-deai08-publical-f67fce08f6-829141628.us-east-2.elb.amazonaws.com   80      102m
+
+  # 현재 클러스터에 배포된 이미지 확인
+  kubectl get deployment web was  -n de-ai-08  -o jsonpath="{range .items[*]}{.metadata.name}{': '}{.spec.template.spec.containers[0].image}{'\n'}{end}"
+  ---
+  web: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-dev/web:dev-latest
+was: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-dev/was:dev-latest
+```
