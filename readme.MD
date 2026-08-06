@@ -125,3 +125,52 @@ git diff -- k8s/overlays/dev/kustomization.yaml
   
 # github actions 잘 작동되는지 점검
 validate.yml = 주석 `체크` 문구 추가
+
+# 로컬 PC의 kubectl과 EKS 클러스터 연결
+```
+  # EKS 클러스터명 조회 (리전 수정)
+  aws eks list-clusters  --region us-east-2  --output table
+  ---
+---------------------------------------      
+|            ListClusters             |
++-------------------------------------+
+||             clusters              ||
+|+-----------------------------------+|
+||  de-ai-05-devops-tf-eks-auto-dev  ||
+||  de-ai-07-eks-auto-dev            ||
+||  de-ai-08-devops-tf-eks-auto-dev  ||
+|+-----------------------------------+|
+
+  # 연결 (클러스터명 교체)
+  aws eks update-kubeconfig --region us-east-2 --name de-ai-08-devops-tf-eks-auto-dev
+  ---
+  Updated context arn:aws:eks:us-east-2:827913617635:cluster/de-ai-08-devops-tf-eks-auto-dev in C:\Users\olcha\.kube\config
+
+  # kubectl이 실제 접근 가능한 클러스터 목록(가능한지)
+  kubectl get namespaces
+  ---
+    NAME              STATUS   AGE
+    de-ai-08          Active   71m
+    default           Active   90m
+    kube-node-lease   Active   90m
+    kube-public       Active   90m
+    kube-system       Active   90m
+```
+
+# ArgoCD 설치 
+```
+  # 설치
+  .\scripts\bootstrap-cd.bat olchangiagi/devops_tf_k8s_cd
+
+  # Argo CD 상태 확인 - Argo CD 파트 확인
+  kubectl get pods -n argocd
+  ---
+  NAME                                               READY   STATUS    RESTARTS       AGE
+argocd-application-controller-0                    1/1     Running   0              4m36s
+argocd-applicationset-controller-8d6865b7f-b96mk   1/1     Running   0              4m37s
+argocd-dex-server-74bbf47cf6-mms6n                 1/1     Running   2 (4m3s ago)   4m37s
+argocd-notifications-controller-84798f79-gcl22     1/1     Running   0              4m36s
+argocd-redis-79db4b8976-qkzfn                      1/1     Running   0              4m36s
+argocd-repo-server-5fcf7766cd-zmc6m                1/1     Running   0              4m36s
+argocd-server-978b68fb7-ptbjj                      1/1     Running   0              4m36s
+```
