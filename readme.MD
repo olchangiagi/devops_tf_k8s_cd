@@ -206,3 +206,14 @@ public-alb   alb     *       k8s-deai08-publical-f67fce08f6-829141628.us-east-2.
   web: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-dev/web:dev-latest
 was: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-dev/was:dev-latest
 ```
+
+# CI 저장소 ci.yaml jobs중 update-cd: 이하 주석 해제
+- 아래 2개 변수를 설정
+     - CD_REPOSITORY
+        ```
+        gh variable set CD_REPOSITORY --repo ucoccto/tf-k8s-ci --body "ucoccto/devops_tf_k8s_cd"
+        ```
+    - CD_REPOSITORY_TOKEN
+        ```
+        gh auth token | gh secret set CD_REPOSITORY_TOKEN --repo ucoccto/devops_tf_k8s_ci
+        ```
