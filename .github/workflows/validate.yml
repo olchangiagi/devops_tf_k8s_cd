@@ -1,0 +1,96 @@
+name: CD Manifest Validation
+
+# k8s/overlays/dev를 Kustomize로 렌더링해 YAML 구조가 정상인지 확인하고, 
+# Git 저장소에 DB 비밀번호가 포함됐는지를 검사
+# 실제 배포는 Argo CD가 담당
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "argocd/**"
+      - "k8s/**"
+      - "scripts/**"
+      - ".github/workflows/validate.yml"
+
+  push:
+    branches: [main]
+    paths:
+      - "argocd/**"
+      - "k8s/**"
+      - "scripts/**"
+      - ".github/workflows/validate.yml"
+
+  workflow_dispatch:
+
+concurrency:
+  group: cd-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout tf-k8s-cd
+        uses: actions/checkout@v7
+
+      - name: Install Kustomize
+        env:
+          KUSTOMIZE_VERSION: v5.8.1
+        run: |
+          set -euo pipefail
+
+          curl -fsSL \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
+            -o /tmp/kustomize.tar.gz
+
+          tar -xzf /tmp/kustomize.tar.gz -C /tmp
+
+          sudo install \
+            -m 0755 \
+            /tmp/kustomize \
+            /usr/local/bin/kustomize
+
+          kustomize version
+
+      - name: Build development manifests
+        run: |
+          set -euo pipefail
+
+          kustomize build k8s/overlays/dev \
+            > /tmp/de-ai-08.yaml
+
+          test -s /tmp/de-ai-08.yaml
+
+      - name: Report initial image placeholders
+        run: |
+          set -euo pipefail
+
+          if grep -R -nE 'CHANGE_ME' k8s; then
+            echo "[WARN] 최초 bootstrap 전이므로 ECR Placeholder가 남아 있습니다."
+            echo "[WARN] scripts/bootstrap-cd.sh 또는 bootstrap-cd.bat 실행 시 자동 설정됩니다."
+          fi
+
+      - name: Prevent database secrets in Git
+        run: |
+          set -euo pipefail
+
+          if grep -R -nE \
+            'DB_PASSWORD:[[:space:]]*[^[:space:]]|password:[[:space:]]*[^[:space:]]' \
+            k8s argocd; then
+
+            echo "[ERROR] 비밀번호로 보이는 값이 Git Manifest에 포함되어 있습니다." >&2
+            exit 1
+          fi
+
+      - name: Write summary
+        run: |
+          {
+            echo "## CD Manifest 검증 완료"
+            echo
+            echo "- Overlay: \`k8s/overlays/dev\`"
+            echo "- Rendered lines: \`$(wc -l < /tmp/de-ai-08.yaml)\`"
+          } >> "$GITHUB_STEP_SUMMARY"

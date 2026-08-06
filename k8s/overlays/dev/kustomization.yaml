@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: de-ai-08
+
+resources:
+- ../../base
+
+commonLabels:
+  environment: dev
+
+images:
+- name: WAS_IMAGE
+  newName: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-dev/was
+  newTag: 5f68fff31524
+- name: WEB_IMAGE
+  newName: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-dev/web
+  newTag: 5f68fff31524

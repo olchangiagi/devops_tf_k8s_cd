@@ -1,0 +1,38 @@
+# Prometheus Operator가 WAS Service의 /metrics 엔드포인트를 자동 수집하도록 정의한다.
+# WAS 애플리케이션이 아직 /metrics를 제공하지 않아도 배포 자체에는 영향이 없으며,
+# Prometheus Targets 화면에서 해당 Target만 Down으로 표시될 수 있다.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  # Grafana/Prometheus에서 식별할 ServiceMonitor 이름이다.
+  name: de-ai-08-was
+  # ServiceMonitor 자체는 monitoring namespace에 둔다.
+  namespace: monitoring
+  labels:
+    # 운영 목적을 설명하는 사용자 라벨이다.
+    app.kubernetes.io/part-of: de-ai-08
+spec:
+  # de-ai-08 namespace 안에서 수집 대상 Service를 찾는다.
+  namespaceSelector:
+    matchNames:
+      - de-ai-08
+
+  # 아래 라벨을 가진 Service를 수집 대상으로 선택한다.
+  # 기존 service-was.yaml의 metadata.labels에 app: was가 있어야 한다.
+  selector:
+    matchLabels:
+      #app: was      
+      monitoring: enabled
+
+  endpoints:
+    # Service 포트의 숫자가 아니라 spec.ports[].name 값을 사용한다.
+    # 기존 WAS Service의 포트 이름이 다르면 http를 실제 이름으로 변경한다.
+    - port: http
+      # FastAPI Prometheus 메트릭 엔드포인트이다.
+      path: /metrics
+      # HTTP 방식으로 수집한다.
+      scheme: http
+      # 15초마다 메트릭을 수집한다.
+      interval: 15s
+      # 10초 이상 응답이 없으면 해당 수집을 실패로 처리한다.
+      scrapeTimeout: 10s

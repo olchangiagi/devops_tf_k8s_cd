@@ -1,0 +1,44 @@
+# Prometheus가 Kubernetes 운영 이상 상태를 탐지할 사용자 정의 Alert Rule이다.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: de-ai-08-autoscaling-rules
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: de-ai-08
+spec:
+  groups:
+    - name: de-ai-08.autoscaling
+      rules:
+        # de-ai-08 namespace에서 Pending Pod가 5분 이상 지속되면 경고한다.
+        - alert: DeAi25PodPendingTooLong
+          expr: kube_pod_status_phase{namespace="de-ai-08", phase="Pending"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "de-ai-08 Pod가 5분 이상 Pending 상태입니다."
+            description: "Pod {{ $labels.pod }}를 배치할 Node 자원, Taint/Toleration 또는 이미지 상태를 확인하세요."
+
+        # HPA 현재 replica가 최대 replica에 도달한 상태가 5분 이상 지속되면 경고한다.
+        - alert: DeAi25HpaAtMaximumReplicas
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="de-ai-08"}
+            >=
+            kube_horizontalpodautoscaler_spec_max_replicas{namespace="de-ai-08"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "de-ai-08 HPA가 최대 Pod 수에 도달했습니다."
+            description: "HPA {{ $labels.horizontalpodautoscaler }}의 maxReplicas와 애플리케이션 병목을 확인하세요."
+
+        # Container 재시작 횟수가 최근 10분 동안 증가하면 경고한다.
+        - alert: DeAi25ContainerRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="de-ai-08"}[10m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "de-ai-08 Container 재시작이 감지되었습니다."
+            description: "Pod {{ $labels.pod }} / Container {{ $labels.container }}의 로그와 Probe를 확인하세요."

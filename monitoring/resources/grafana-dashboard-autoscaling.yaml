@@ -1,0 +1,133 @@
+# Grafana sidecar가 이 ConfigMap을 발견해 자동으로 Dashboard를 등록한다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: de-ai-08-autoscaling-dashboard
+  namespace: monitoring
+  labels:
+    # values.yaml의 Grafana sidecar 검색 조건과 일치해야 한다.
+    grafana_dashboard: "1"
+data:
+  # 아래 JSON은 Grafana Dashboard 정의이며 YAML 블록 문자열로 저장한다.
+  de-ai-08-autoscaling.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "type": "stat",
+          "title": "현재 실행 중인 Pod",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "sum(kube_pod_status_phase{namespace=\"de-ai-08\",phase=\"Running\"})", "refId": "A"}
+          ],
+          "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}
+        },
+        {
+          "type": "stat",
+          "title": "Ready Node 수",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})", "refId": "A"}
+          ],
+          "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0}
+        },
+        {
+          "type": "stat",
+          "title": "Pending Pod 수",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "sum(kube_pod_status_phase{namespace=\"de-ai-08\",phase=\"Pending\"})", "refId": "A"}
+          ],
+          "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0}
+        },
+        {
+          "type": "stat",
+          "title": "최근 10분 Container 재시작",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"de-ai-08\"}[10m]))", "refId": "A"}
+          ],
+          "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+        },
+        {
+          "type": "timeseries",
+          "title": "HPA 현재 / 목표 / 최대 Replica",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"de-ai-08\"}", "legendFormat": "{{horizontalpodautoscaler}} current", "refId": "A"},
+            {"expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"de-ai-08\"}", "legendFormat": "{{horizontalpodautoscaler}} desired", "refId": "B"},
+            {"expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"de-ai-08\"}", "legendFormat": "{{horizontalpodautoscaler}} max", "refId": "C"}
+          ],
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 6}
+        },
+        {
+          "type": "timeseries",
+          "title": "Deployment 사용 가능 Replica",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "kube_deployment_status_replicas_available{namespace=\"de-ai-08\"}", "legendFormat": "{{deployment}}", "refId": "A"}
+          ],
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 6}
+        },
+        {
+          "type": "timeseries",
+          "title": "Namespace CPU 사용량",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"de-ai-08\",container!=\"\",image!=\"\"}[5m]))", "legendFormat": "CPU cores", "refId": "A"}
+          ],
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 15}
+        },
+        {
+          "type": "timeseries",
+          "title": "Namespace Memory Working Set",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "sum(container_memory_working_set_bytes{namespace=\"de-ai-08\",container!=\"\",image!=\"\"})", "legendFormat": "Memory", "refId": "A"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 15}
+        },
+        {
+          "type": "timeseries",
+          "title": "Node CPU 사용률",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}", "refId": "A"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 24}
+        },
+        {
+          "type": "timeseries",
+          "title": "Node Memory 사용률",
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "targets": [
+            {"expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", "legendFormat": "{{instance}}", "refId": "A"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "min": 0, "max": 100}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 24}
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 39,
+      "tags": ["de-ai-08", "kubernetes", "autoscaling"],
+      "templating": {
+        "list": [
+          {
+            "name": "datasource",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {}
+          }
+        ]
+      },
+      "time": {"from": "now-30m", "to": "now"},
+      "timezone": "browser",
+      "title": "DE-AI-08 Kubernetes Autoscaling",
+      "uid": "de-ai-08-autoscaling",
+      "version": 1
+    }

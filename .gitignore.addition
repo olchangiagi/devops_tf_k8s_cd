@@ -1,0 +1,2 @@
+# setup-monitoring 스크립트가 생성하는 실제 저장소 정보 포함 파일은 Git에서 제외한다.
+argocd/monitoring-application.generated.yaml

@@ -1,0 +1,12 @@
+# Argo CD가 monitoring/resources 경로를 Kustomize 애플리케이션으로 인식한다.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 이 디렉터리의 리소스는 별도 namespace가 명시된 경우 해당 namespace에 생성된다.
+resources:
+  # HPA/Pod/Node 관찰용 Grafana Dashboard를 등록한다.
+  - grafana-dashboard-autoscaling.yaml
+  # Pod 장애, Pending, HPA 최대치 도달에 대한 Alert Rule을 등록한다.
+  - prometheus-rules.yaml
+  # WAS가 /metrics를 제공할 때 사용할 선택적 ServiceMonitor를 등록한다.
+  - servicemonitor-was.yaml
