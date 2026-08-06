@@ -4,10 +4,10 @@ metadata:
   name: was-service
 
   labels:
-    # Prometheus ServiceMonitor가 실제 운영 WAS Service만 선택하도록 사용하는 라벨 
-    monitoring: enabled
     app.kubernetes.io/name: was
     app.kubernetes.io/part-of: de-ai-08
+    # Prometheus ServiceMonitor가 실제 운영 WAS Service만 선택하도록 사용하는 라벨 
+    monitoring: enabled
     
 spec:
   type: ClusterIP

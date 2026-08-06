@@ -220,3 +220,8 @@ was: 827913617635.dkr.ecr.us-east-2.amazonaws.com/de-ai-08-devops-tf-eks-auto-de
 
 # ArgoCD 대시보드
 - ./scripts/open-argocd.bat
+```
+Argo CD URL      : https://localhost:8080
+Argo CD Username : admin
+Argo CD Password : 90-3gANrzClfb8IW
+```
